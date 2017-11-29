@@ -28,56 +28,59 @@ int		index_of(const char *s, int c)
 	return (-1);
 }
 
-int		get_next_line(const int fd, char **line)
+char	*process(char **stock)
 {
-	char			*text;
-	int				ret;
+	int	pos;
+	char	*res;
+	char	*stock_ret;
+
+	if ((pos = index_of(*stock, '\n')) >= 0) // \n found
+	{
+		stock_ret = *stock;
+		res = ft_strsub(*stock, 0, pos);
+		*stock = ft_strsub(*stock, pos + 1, ft_strlen(*stock) - pos + 1);
+		free(stock_ret);
+		stock_ret = NULL;
+		return (res);
+	}
+	return (NULL);
+}
+
+int	get_next_line(const int fd, char **line)
+{
+	int			ret;
 	char			buffer[BUFF_SIZE + 1];
-	static char		*rest;
-	int				pos;
+	static char		*stock;
+	char			*stock_ret;
+	char			*res;
 
 	if (fd == -1)
 		return (-1);
 
-	text = ft_strdup("");
-	rest = NULL;
-
-	if (rest && (pos = index_of(rest, '\n') != -1))
+	if (stock)
 	{
-		text = ft_strjoin(text, ft_strsub(rest, 0, pos));
-		rest = ft_strsub(rest, pos, ft_strlen(rest) - pos);
-		*line = text;
-		return (1);
-	}
-
-	while ((ret = read(fd, buffer, BUFF_SIZE)))
-	{
-		if (rest)
+		if ((res = process(&stock)))
 		{
-			ft_strjoin(text, rest);
-			free(rest);
-			rest = NULL;
-		}
-
-		buffer[ret] = '\0';
-
-		pos = index_of(buffer, '\n');
-
-		if (pos != -1)
-		{
-			text = ft_strjoin(text, ft_strsub(buffer, 0, pos));
-			printf("%s\n", text);
-			rest = ft_strsub(buffer, pos, ft_strlen(buffer) - pos);
-			*line = text;
+			*line = res;
 			return (1);
 		}
-		else
+	}
+
+	if (!stock)
+		stock = ft_strdup("");
+	while ((ret = read(fd, buffer, BUFF_SIZE)))
+	{
+		buffer[ret] = '\0';
+		stock_ret = stock;
+		stock = ft_strjoin(stock, buffer);
+		free(stock_ret);
+		stock_ret = NULL;
+		if ((res = process(&stock)))
 		{
-			text = ft_strjoin(text, buffer);
-			printf("%s\n", text);
+			*line = res;
+			return (1);
 		}
 	}
 
-	*line = text;
 	return (0);
 }

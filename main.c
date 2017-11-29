@@ -16,7 +16,7 @@
 #include <stdio.h>
 int		main(int argc, char **argv)
 {
-	int		fd;
+	int	fd;
 	char	*line;
 
 	if (argc != 2)
@@ -24,9 +24,8 @@ int		main(int argc, char **argv)
 	fd = open(argv[1], O_RDONLY);
 	if (fd == -1)
 		return (0);
-	while (get_next_line(fd, &line)){}
-	//	printf("%s", line);
-	//printf("%s", line);
+	while (get_next_line(fd, &line))
+		printf("%s\n", line);
 	close(fd);
 	return (0);
 }
