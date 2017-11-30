@@ -6,7 +6,7 @@
 /*   By: htaillef <marvin@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2017/11/29 17:04:25 by htaillef     #+#   ##    ##    #+#       */
-/*   Updated: 2017/11/30 15:37:15 by htaillef    ###    #+. /#+    ###.fr     */
+/*   Updated: 2017/11/30 18:03:56 by htaillef    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -28,7 +28,7 @@ int		index_of(const char *s, int c)
 	return (-1);
 }
 
-char	*process(char **stock, int *error)
+char	*process(char **stock)
 {
 	int		pos;
 	char	*res;
@@ -40,10 +40,7 @@ char	*process(char **stock, int *error)
 		if (!(res = ft_strsub(*stock, 0, pos)) ||
 				!(*stock = ft_strsub(*stock, pos + 1,
 						ft_strlen(*stock) - pos + 1)))
-		{
-			*error = 1;
 			return (NULL);
-		}
 		free(stock_ret);
 		stock_ret = NULL;
 		return (res);
@@ -51,55 +48,52 @@ char	*process(char **stock, int *error)
 	return (NULL);
 }
 
+int		read_line(int fd, char **stock, char **line, char **res)
+{
+	char			buffer[BUFF_SIZE + 1];
+	int				ret;
+	char			*stock_ret;
+
+	while ((ret = read(fd, buffer, BUFF_SIZE)))
+	{
+		buffer[ret] = '\0';
+		stock_ret = *stock;
+		if (ret == -1 || !(*stock = ft_strjoin(*stock, buffer)))
+			return (-1);
+		ft_strdel(&stock_ret);
+		if ((*res = process(stock)))
+		{
+			*line = *res;
+			return (1);
+		}
+	}
+	if (!(*res) && ft_strlen(*stock) > 0)
+	{
+		if (!(*line = ft_strdup(*stock)))
+			return (-1);
+		ft_strdel(stock);
+		return (1);
+	}
+	return (0);
+}
+
 int		get_next_line(const int fd, char **line)
 {
-	int				ret;
-	int				error;
-	char			buffer[BUFF_SIZE + 1];
 	static char		*stock;
-	char			*stock_ret;
 	char			*res;
 
 	if (fd < 0 || !(line))
 		return (-1);
-	error = 0;
 	if (stock)
 	{
-		if ((res = process(&stock, &error)))
+		if ((res = process(&stock)))
 		{
 			*line = res;
 			return (1);
 		}
-		else if (error)
-			return (-1);
 	}
 	if (!stock)
 		if (!(stock = ft_strdup("")))
 			return (-1);
-	while ((ret = read(fd, buffer, BUFF_SIZE)))
-	{
-		buffer[ret] = '\0';
-		stock_ret = stock;
-		if (ret == -1 || !(stock = ft_strjoin(stock, buffer)))
-			return (-1);
-		free(stock_ret);
-		stock_ret = NULL;
-		error = 0;
-		if ((res = process(&stock, &error)))
-		{
-			*line = res;
-			return (1);
-		}
-		else if (error)
-			return (-1);
-	}
-	if (!res && ft_strlen(stock) > 0)
-	{
-		if (!(*line = ft_strdup(stock)))
-			return (-1);
-		free(stock);
-		stock = NULL;
-		return (1);
-	}
-	return (0);
+	return (read_line(fd, &stock, line, &res));
 }
