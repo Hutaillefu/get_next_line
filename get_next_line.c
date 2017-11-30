@@ -28,7 +28,7 @@ int		index_of(const char *s, int c)
 	return (-1);
 }
 
-char	*process(char **stock)
+char	*process(char **stock, int *error)
 {
 	int	pos;
 	char	*res;
@@ -37,8 +37,13 @@ char	*process(char **stock)
 	if ((pos = index_of(*stock, '\n')) >= 0) // \n found
 	{
 		stock_ret = *stock;
-		res = ft_strsub(*stock, 0, pos);
-		*stock = ft_strsub(*stock, pos + 1, ft_strlen(*stock) - pos + 1);
+		if (!(res = ft_strsub(*stock, 0, pos)) || // get result line
+		    !(*stock = ft_strsub(*stock, pos + 1, // update stock
+		    ft_strlen(*stock) - pos + 1)))
+		{
+			*error = 1;
+			return (NULL);
+		}
 		free(stock_ret);
 		stock_ret = NULL;
 		return (res);
@@ -49,6 +54,7 @@ char	*process(char **stock)
 int	get_next_line(const int fd, char **line)
 {
 	int			ret;
+	int			error;
 	char			buffer[BUFF_SIZE + 1];
 	static char		*stock;
 	char			*stock_ret;
@@ -57,30 +63,39 @@ int	get_next_line(const int fd, char **line)
 	if (fd == -1)
 		return (-1);
 
+	error = 0;
 	if (stock)
 	{
-		if ((res = process(&stock)))
+		if ((res = process(&stock, &error)))
 		{
 			*line = res;
 			return (1);
 		}
+		else if (error)
+			return (-1);
 	}
 
 	if (!stock)
-		stock = ft_strdup("");
+		if (!(stock = ft_strdup("")))
+			return (-1);				// strdup failed
+
 	while ((ret = read(fd, buffer, BUFF_SIZE)))
 	{
 		buffer[ret] = '\0';
 		stock_ret = stock;
-		stock = ft_strjoin(stock, buffer);
+		if (!(stock = ft_strjoin(stock, buffer)))
+			return (-1);				// strjoin failed
 		free(stock_ret);
 		stock_ret = NULL;
-		if ((res = process(&stock)))
+		error = 0;
+		if ((res = process(&stock, &error)))
 		{
 			*line = res;
-			return (1);
+			return (1);				// process succes
 		}
+		else if (error)
+			return (-1);				// process failed
 	}
-
+	
 	return (0);
 }
