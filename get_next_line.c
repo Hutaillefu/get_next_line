@@ -6,15 +6,14 @@
 /*   By: htaillef <marvin@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2017/11/29 17:04:25 by htaillef     #+#   ##    ##    #+#       */
-/*   Updated: 2017/11/30 18:03:56 by htaillef    ###    #+. /#+    ###.fr     */
+/*   Updated: 2017/12/01 16:24:34 by htaillef    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include <stdio.h>
 
-int		index_of(const char *s, int c)
+int			index_of(const char *s, int c)
 {
 	int i;
 
@@ -28,7 +27,7 @@ int		index_of(const char *s, int c)
 	return (-1);
 }
 
-char	*process(char **stock)
+char		*process(char **stock)
 {
 	int		pos;
 	char	*res;
@@ -48,7 +47,7 @@ char	*process(char **stock)
 	return (NULL);
 }
 
-int		read_line(int fd, char **stock, char **line, char **res)
+int			read_line(int fd, char **stock, char **line, char **res)
 {
 	char			buffer[BUFF_SIZE + 1];
 	int				ret;
@@ -77,23 +76,49 @@ int		read_line(int fd, char **stock, char **line, char **res)
 	return (0);
 }
 
-int		get_next_line(const int fd, char **line)
+t_list		*get_lst(t_list **lst, size_t fd)
 {
-	static char		*stock;
+	t_list		*iterator;
+	t_list		*new;
+
+	iterator = *lst;
+	while (iterator)
+	{
+		if (iterator->content_size == fd)
+		{
+			return (iterator);
+		}
+		iterator = iterator->next;
+	}
+	new = ft_lstnew(NULL, 0);
+	new->content_size = fd;
+	ft_lstadd(lst, new);
+	return (*lst);
+}
+
+int			get_next_line(const int fd, char **line)
+{
+	static t_list	*list = NULL;
+	char			*stock;
 	char			*res;
+	t_list			*current;
 
 	if (fd < 0 || !(line))
 		return (-1);
-	if (stock)
+	current = get_lst(&list, (size_t)fd);
+	if (!current)
+		return (-1);
+	stock = (char *)current->content;
+	if ((char *)current->content)
 	{
-		if ((res = process(&stock)))
+		if ((res = process((char **)&current->content)))
 		{
 			*line = res;
 			return (1);
 		}
 	}
-	if (!stock)
-		if (!(stock = ft_strdup("")))
+	if (!(char *)current->content)
+		if (!(char *)(current->content = ft_strdup("")))
 			return (-1);
-	return (read_line(fd, &stock, line, &res));
+	return (read_line(fd, (char **)&current->content, line, &res));
 }
