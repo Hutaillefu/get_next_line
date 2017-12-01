@@ -6,7 +6,7 @@
 /*   By: htaillef <marvin@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2017/11/29 17:04:25 by htaillef     #+#   ##    ##    #+#       */
-/*   Updated: 2017/11/30 19:23:07 by htaillef    ###    #+. /#+    ###.fr     */
+/*   Updated: 2017/12/01 15:21:28 by htaillef    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -77,25 +77,23 @@ int		read_line(int fd, char **stock, char **line, char **res)
 	return (0);
 }
 
-t_list		*get_lst(t_list *lst, size_t fd)
+t_list		*get_lst(t_list **lst, size_t fd)
 {
 	t_list		*iterator;
 	t_list		*new;
 
-	if (!lst)
+	if (!(*lst))
 	{
 		new = ft_lstnew(NULL, 0);
 		new->content_size = fd;
-		ft_lstadd(&lst, new);
-		printf("New fd : %zu\n", lst->content_size);
-		return (new);
+		ft_lstadd(lst, new);
+		return (*lst);
 	}
-	iterator = lst;
+	iterator = *lst;
 	while (iterator)
 	{
 		if (iterator->content_size == fd)
 		{
-			printf("Old fd : %zu\n", fd);
 			return (iterator);
 		}
 		iterator = iterator->next;
@@ -105,29 +103,27 @@ t_list		*get_lst(t_list *lst, size_t fd)
 
 int		get_next_line(const int fd, char **line)
 {
-	static t_list	*list;
+	static t_list	*list = NULL;
 	char			*stock;
 	char			*res;
 	t_list			*current;
 
 	if (fd < 0 || !(line))
 		return (-1);
-
-	current = get_lst(list, (size_t)fd);
+	current = get_lst(&list, (size_t)fd);
 	if (!current)
 		return (-1);
 	stock = (char *)current->content;
-	if (stock)
+	if ((char *)current->content)
 	{
-		printf("HERE\n");
-		if ((res = process(&stock)))
+		if ((res = process((char **)&current->content)))
 		{
 			*line = res;
 			return (1);
 		}
 	}
-	if (!stock)
-		if (!(stock = ft_strdup("")))
+	if (!(char *)current->content)
+		if (!(char *)(current->content = ft_strdup("")))
 			return (-1);
-	return (read_line(fd, &stock, line, &res));
+	return (read_line(fd, (char **)&current->content, line, &res));
 }
